@@ -1,0 +1,5 @@
+server:
+  port: 8086
+endpoint:
+  pricing: http://localhost:8085/pricing/
+  inventory: http://localhost:8080/inventory/
