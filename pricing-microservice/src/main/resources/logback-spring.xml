@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration>
+<configuration scan="true">
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+    <springProperty scope="context" name="app_name" source="spring.application.name"/>
+    <springProperty scope="context" name="app_port" source="server.port"/>
+    <springProperty scope="local" name="logstash_host" source="logstash.host"/>
+    <springProperty scope="local" name="logstash_port" source="logstash.port"/>
+    <appender name="logstash" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <param name="Encoding" value="UTF-8"/>
+        <destination>${logstash_host}:${logstash_port}</destination>
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <arguments>
+                    <includeNonStructuredArguments>true</includeNonStructuredArguments>
+                </arguments>
+                <pattern>
+                    <omitEmptyFields>true</omitEmptyFields>
+                    <pattern>
+                        {
+                        "applicationName": "${app_name}",
+                        "correlationId1": "%mdc{correlationId1}",
+                        "logger": "%logger",
+                        "thread": "%thread",
+                        "log.level": "%level",
+                        "log.message": "%message",
+                        "traceId": "%mdc{traceId}"
+                        }
+                    </pattern>
+                </pattern>
+            </providers>
+        </encoder>
+    </appender>
+    <root>
+        <appender-ref ref="logstash"/>
+    </root>
+</configuration>

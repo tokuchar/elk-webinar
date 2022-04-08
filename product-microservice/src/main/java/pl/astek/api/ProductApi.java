@@ -1,8 +1,9 @@
 package pl.astek.api;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import pl.astek.dto.Product;
@@ -13,6 +14,7 @@ import pl.astek.repo.ProductRepository;
 
 import java.util.UUID;
 
+@Slf4j
 @RequestMapping("/product")
 @RequiredArgsConstructor
 public class ProductApi {
@@ -22,10 +24,15 @@ public class ProductApi {
     private final String inventoryEndpoint;
 
     @GetMapping("/{productId}/details")
-    public ResponseEntity<ProductDetails> getProductDetails(@PathVariable UUID productId) {
+    public ResponseEntity<ProductDetails> getProductDetails(@PathVariable UUID productId, @RequestHeader("correlationId") String correlationId) {
+        MDC.put("correlationId1", correlationId);
+        log.info("get product details" + productId + " processing");
 
-        ResponseEntity<PricingItem> pricingItem = restTemplate.getForEntity(pricingEndpoint + productId, PricingItem.class);
-        ResponseEntity<InventoryItem> inventoryItem = restTemplate.getForEntity(inventoryEndpoint + productId, InventoryItem.class);
+
+        ResponseEntity<PricingItem> pricingItem = restTemplate.exchange(pricingEndpoint + productId,
+                HttpMethod.GET, createEntityWithCorrelationId(correlationId), PricingItem.class);
+        ResponseEntity<InventoryItem> inventoryItem = restTemplate.exchange(inventoryEndpoint + productId,
+                HttpMethod.GET, createEntityWithCorrelationId(correlationId), InventoryItem.class);
         pl.astek.model.Product product = productRepository.getById(productId);
 
         ProductDetails productDetails = ProductDetails.builder()
@@ -36,6 +43,14 @@ public class ProductApi {
 
         return ResponseEntity
                 .ok(productDetails);
+    }
+
+    private HttpEntity<Void> createEntityWithCorrelationId(String correlationId) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("correlationId", correlationId);
+        headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+
+        return new HttpEntity<>(headers);
     }
 
     @PostMapping

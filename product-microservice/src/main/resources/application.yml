@@ -3,3 +3,9 @@ server:
 endpoint:
   pricing: http://localhost:8085/pricing/
   inventory: http://localhost:8080/inventory/
+spring:
+  application:
+    name: product-service
+logstash:
+  host: localhost
+  port: 5002
